@@ -2,11 +2,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from .forms import OrderForm
-from .models import Car
-
-
-def index(request):
-    return render(request, "index.html")
+from .models import Car, ViewHistory, Favorite, Order
 
 
 def home(request):
@@ -18,10 +14,6 @@ def home(request):
             ViewHistory.objects.get_or_create(user=request.user, car=car)
 
     return render(request, "home.html", {"cars": cars})
-
-
-def thanks(request):
-    return render(request, "thanks.html")
 
 
 @login_required
@@ -36,6 +28,30 @@ def remove_from_favorites(request, car_id):
     car = get_object_or_404(Car, id=car_id)
     Favorite.objects.filter(user=request.user, car=car).delete()
     return redirect("profile")
+
+
+@login_required
+def create_order(request, car_id):
+    car = get_object_or_404(Car, id=car_id)
+    if request.method == "POST":
+        form = OrderForm(request.POST)
+        if form.is_valid():
+            order = form.save(commit=False)
+            order.user = request.user
+            order.car = car
+            order.save()
+            messages.success(
+                request, f"Заявка на {car.brand} {car.model} успешно создана!"
+            )
+            return redirect("thanks")
+    else:
+        form = OrderForm()
+
+    return render(request, "order_form.html", {"form": form, "car": car})
+
+
+def thanks(request):
+    return render(request, "thanks.html")
 
 
 @login_required
