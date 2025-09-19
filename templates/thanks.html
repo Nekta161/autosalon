@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+
+{% block title %}Спасибо за заявку!{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-6 mx-auto text-center">
+        <div class="alert alert-success">
+            <h2>✅ Спасибо за заявку!</h2>
+            <p>Наш менеджер свяжется с вами в ближайшее время.</p>
+            <a href="{% url 'home' %}" class="btn btn-primary">Вернуться на главную</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
