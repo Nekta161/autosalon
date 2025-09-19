@@ -37,27 +37,29 @@
                     </li>
                 </ul>
                 <ul class="navbar-nav">
-                    {% if user.is_authenticated %}
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" data-bs-toggle="dropdown">
-                                {{ user.username }}
-                            </a>
-                            <ul class="dropdown-menu dropdown-menu-end">
-                                <li><a class="dropdown-item" href="#">Профиль (скоро)</a></li>
-                                <form method="post" action="#" style="display:inline;">
-                                  {% csrf_token %}
-                                  <button type="submit" class="dropdown-item">Выход (скоро)</button>
-                              </form>
-                            </ul>
-                        </li>
-                    {% else %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'login' %}">Вход</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#">Регистрация (скоро)</a>
-                        </li>
-                    {% endif %}
+                  {% if user.is_authenticated %}
+                      <li class="nav-item dropdown">
+                          <a class="nav-link dropdown-toggle" href="#" id="userDropdown" data-bs-toggle="dropdown">
+                              {{ user.username }}
+                          </a>
+                          <ul class="dropdown-menu dropdown-menu-end">
+                              <li><a class="dropdown-item" href="{% url 'profile' %}">Профиль</a></li>
+                              <li>
+                                  <form method="post" action="{% url 'logout' %}" class="d-inline">
+                                      {% csrf_token %}
+                                      <button type="submit" class="dropdown-item">Выход</button>
+                                  </form>
+                              </li>
+                          </ul>
+                      </li>
+                  {% else %}
+                    <li class="nav-item">
+                      <a class="nav-link" href="{% url 'login' %}">Вход</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'register' %}">Регистрация</a>
+                    </li>
+                  {% endif %}
                 </ul>
             </div>
         </div>

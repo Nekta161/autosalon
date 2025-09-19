@@ -5,9 +5,11 @@ from django.conf.urls.static import static
 from core import views
 
 urlpatterns = [
-    path("", views.home, name="home"),
     path("admin/", admin.site.urls),
-    path("", include("core.urls")),
+    path("", views.home, name="home"),
+    path("order/<int:car_id>/", views.create_order, name="create_order"),
+    path("thanks/", views.thanks, name="thanks"),
+    path("users/", include("users.urls")),
 ]
 
 if settings.DEBUG:
