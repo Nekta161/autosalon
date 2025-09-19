@@ -1,0 +1,31 @@
+<!-- templates/index.html -->
+{% extends 'base.html' %}
+
+{% block title %}Автосалон — Главная{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1 class="display-4">🚗 Добро пожаловать в наш автосалон!</h1>
+        <p class="lead">Лучшие автомобили по выгодным ценам. Только проверенные машины в наличии.</p>
+        <a href="#" class="btn btn-primary btn-lg">Смотреть каталог</a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <h3>🔥 Акции</h3>
+        <div class="alert alert-success">
+            <strong>Скидка 10%!</strong> На все автомобили 2020 года и новее.
+        </div>
+        <div class="alert alert-info">
+            <strong>Бесплатная доставка!</strong> При покупке от 3 000 000 ₽.
+        </div>
+    </div>
+    <div class="col-md-6">
+        <h3>📞 Свяжитесь с нами</h3>
+        <p>Звоните: <strong>+7 (XXX) XXX-XX-XX</strong></p>
+        <p>Пишите в Telegram: <strong>@ваш_бот</strong></p>
+    </div>
+</div>
+{% endblock %}
