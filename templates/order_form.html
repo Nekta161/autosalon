@@ -1,0 +1,33 @@
+<!-- templates/order_form.html -->
+{% extends 'base.html' %}
+
+{% block title %}Оставить заявку — {{ car.brand }} {{ car.model }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h4>Оставить заявку на автомобиль</h4>
+            </div>
+            <div class="card-body">
+                <h5>{{ car.brand }} {{ car.model }} ({{ car.year }})</h5>
+                <p><strong>Цена:</strong> {{ car.price }} ₽</p>
+
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        {{ form.comment.label_tag }}
+                        {{ form.comment }}
+                        {% if form.comment.errors %}
+                            <div class="text-danger">{{ form.comment.errors }}</div>
+                        {% endif %}
+                    </div>
+                    <button type="submit" class="btn btn-success w-100">Отправить заявку</button>
+                    <a href="{% url 'home' %}" class="btn btn-secondary w-100 mt-2">Отмена</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

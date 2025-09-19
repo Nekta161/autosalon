@@ -1,6 +1,9 @@
-# core/routing.py
 from django.urls import path
-from . import consumers
+from . import views, consumers
+
+urlpatterns = [
+    path("", views.index, name="index"),
+]
 
 websocket_urlpatterns = [
     path("ws/chat/<int:car_id>/", consumers.ChatConsumer.as_asgi()),

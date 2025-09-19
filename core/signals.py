@@ -9,7 +9,6 @@ from .telegram import send_telegram_message
 @receiver(post_save, sender=Order)
 def notify_admin_on_new_order(sender, instance, created, **kwargs):
     if created:
-        # Отправка через Telegram
         message = (
             f"🚨 *Новая заявка!*\n"
             f"ID: `{instance.id}`\n"
@@ -19,8 +18,11 @@ def notify_admin_on_new_order(sender, instance, created, **kwargs):
             f"Статус: `{instance.get_status_display()}`\n"
             f"Создана: `{instance.created_at.strftime('%Y-%m-%d %H:%M')}`"
         )
+
+        # Отправляем ВСЕГДА
         send_telegram_message(message)
 
+        # WebSocket-уведомление
         channel_layer = get_channel_layer()
         async_to_sync(channel_layer.group_send)(
             "admin_notifications",
@@ -32,17 +34,3 @@ def notify_admin_on_new_order(sender, instance, created, **kwargs):
                 "created_at": instance.created_at.isoformat(),
             },
         )
-
-
-@receiver(post_save, sender=Car)
-def notify_on_car_update(sender, instance, **kwargs):
-    channel_layer = get_channel_layer()
-    async_to_sync(channel_layer.group_send)(
-        "car_updates",
-        {
-            "type": "car_updated",
-            "car_id": instance.id,
-            "status": instance.status,
-            "price": str(instance.price),
-        },
-    )

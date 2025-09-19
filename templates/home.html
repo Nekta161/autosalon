@@ -14,7 +14,7 @@
 <div class="row" id="cars-container">
     {% if cars %}
         {% for car in cars %}
-            <div class="col-12 col-md-6 col-lg-4 mb-4">
+            <div class="col-12 col-md-6 col-lg-4 mb-4" data-car-id="{{ car.id }}">
                 <div class="card car-card h-100 shadow-sm">
                     {% if car.photo %}
                         <img src="{{ car.photo.url }}" class="card-img-top" alt="{{ car.brand }} {{ car.model }}" style="height: 200px; object-fit: cover;">
@@ -80,4 +80,101 @@
 {% endblock %}
 
 {% block extra_scripts %}
+<script>
+    let chatSocket = null;
+    let currentCarId = null;
+    let carSocket = null;
+
+    function openChat(carId) {
+        currentCarId = carId;
+        const modal = new bootstrap.Modal(document.getElementById('chatModal'));
+        modal.show();
+
+        if (chatSocket) {
+            chatSocket.close();
+        }
+
+        chatSocket = new WebSocket(
+            'ws://' + window.location.host + '/ws/chat/' + carId + '/'
+        );
+
+        chatSocket.onopen = function(e) {
+            console.log('WebSocket подключен к чату по авто ID: ' + carId);
+            document.getElementById('chat-messages').innerHTML = '<div class="alert alert-info">Чат открыт. Можете отправить сообщение.</div>';
+        };
+
+        chatSocket.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'mb-2 p-2 border rounded';
+            messageDiv.innerHTML = `
+                <strong>${data.username}:</strong> ${data.message}
+                <div class="text-muted small">${new Date(data.timestamp).toLocaleString()}</div>
+            `;
+            document.getElementById('chat-messages').appendChild(messageDiv);
+            document.getElementById('chat-messages').scrollTop = document.getElementById('chat-messages').scrollHeight;
+        };
+
+        chatSocket.onclose = function(e) {
+            console.log('WebSocket отключен');
+            document.getElementById('chat-messages').innerHTML = '<div class="alert alert-warning">Соединение закрыто.</div>';
+        };
+
+        document.getElementById('send-chat-btn').onclick = function() {
+            const input = document.getElementById('chat-input');
+            if (input.value && chatSocket.readyState === WebSocket.OPEN) {
+                chatSocket.send(JSON.stringify({
+                    'message': input.value
+                }));
+                input.value = '';
+            }
+        };
+    }
+
+    // Подключение к обновлениям авто
+    function connectToCarUpdates() {
+        carSocket = new WebSocket(
+            'ws://' + window.location.host + '/ws/cars/'
+        );
+
+        carSocket.onopen = function(e) {
+            console.log('Подключено к обновлениям авто');
+        };
+
+        carSocket.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+            if (data.type === 'car_updated') {
+                const carCard = document.querySelector(`[data-car-id="${data.car_id}"]`);
+                if (carCard) {
+                    // Обновляем цену
+                    const priceElement = carCard.querySelector('.card-text strong');
+                    if (priceElement) {
+                        priceElement.textContent = data.price + ' ₽';
+                    }
+                    // Обновляем статус (если есть)
+                    const statusBadge = carCard.querySelector('.badge');
+                    if (statusBadge) {
+                        statusBadge.textContent = data.status === 'available' ? 'В наличии' : 'Продано';
+                        statusBadge.className = 'badge ' + (data.status === 'available' ? 'bg-success' : 'bg-secondary');
+                    }
+                    // Визуальный эффект обновления
+                    carCard.classList.add('animate__animated', 'animate__pulse');
+                    setTimeout(() => {
+                        carCard.classList.remove('animate__animated', 'animate__pulse');
+                    }, 1000);
+                }
+            }
+        };
+
+        carSocket.onclose = function(e) {
+            console.log('Соединение с обновлениями авто закрыто');
+            setTimeout(connectToCarUpdates, 3000); // Переподключение
+        };
+    }
+
+    // Подключаемся к обновлениям при загрузке страницы
+    document.addEventListener('DOMContentLoaded', function() {
+        connectToCarUpdates();
+    });
+</script>
 {% endblock %}

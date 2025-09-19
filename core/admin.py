@@ -5,14 +5,17 @@ from django.forms import Textarea
 from django.utils.html import format_html
 from django.urls import reverse
 from django.contrib import messages
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+from django.contrib.auth.models import User
 from .models import UserProfile, Car, ViewHistory, Favorite, Order, News, ChatMessage
 
 
 # ==============================
-# INLINE: История просмотров
+# INLINE: История просмотров (для UserAdmin)
 # ==============================
 class ViewHistoryInline(admin.TabularInline):
     model = ViewHistory
+    fk_name = "user"
     extra = 0
     readonly_fields = ("viewed_at",)
     fields = ("car", "viewed_at")
@@ -21,10 +24,11 @@ class ViewHistoryInline(admin.TabularInline):
 
 
 # ==============================
-# INLINE: Избранные автомобили
+# INLINE: Избранные автомобили (для UserAdmin)
 # ==============================
 class FavoriteInline(admin.TabularInline):
     model = Favorite
+    fk_name = "user"
     extra = 0
     readonly_fields = ("added_at",)
     fields = ("car", "added_at")
@@ -33,10 +37,11 @@ class FavoriteInline(admin.TabularInline):
 
 
 # ==============================
-# INLINE: Заявки пользователя
+# INLINE: Заявки пользователя (для UserAdmin)
 # ==============================
 class OrderInline(admin.TabularInline):
     model = Order
+    fk_name = "user"
     extra = 0
     readonly_fields = ("created_at", "updated_at")
     fields = ("car", "status", "created_at", "comment")
@@ -45,11 +50,11 @@ class OrderInline(admin.TabularInline):
 
 
 # ==============================
-# INLINE: Сообщения чата (отправленные)
+# INLINE: Сообщения чата (отправленные) (для UserAdmin)
 # ==============================
 class SentMessagesInline(admin.TabularInline):
     model = ChatMessage
-    fk_name = "user"  # Явно указываем, что это сообщения ОТ пользователя
+    fk_name = "user"
     extra = 0
     readonly_fields = ("created_at", "is_read", "admin")
     fields = ("message", "admin", "is_read", "created_at")
@@ -58,20 +63,20 @@ class SentMessagesInline(admin.TabularInline):
 
 
 # ==============================
-# INLINE: Сообщения чата (полученные админом)
+# INLINE: Сообщения чата (полученные админом) — не нужен в UserAdmin
 # ==============================
-class ReceivedMessagesInline(admin.TabularInline):
-    model = ChatMessage
-    fk_name = "admin"  # Явно указываем, что это сообщения ДЛЯ админа
-    extra = 0
-    readonly_fields = ("created_at", "is_read", "user")
-    fields = ("message", "user", "is_read", "created_at")
-    verbose_name = "Полученное сообщение"
-    verbose_name_plural = "Полученные сообщения"
+# class ReceivedMessagesInline(admin.TabularInline):
+#     model = ChatMessage
+#     fk_name = 'admin'
+#     extra = 0
+#     readonly_fields = ('created_at', 'is_read', 'user')
+#     fields = ('message', 'user', 'is_read', 'created_at')
+#     verbose_name = "Полученное сообщение"
+#     verbose_name_plural = "Полученные сообщения"
 
 
 # ==============================
-# АДМИНКА: Профиль пользователя
+# АДМИНКА: Профиль пользователя — БЕЗ ИНЛАЙНОВ
 # ==============================
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
@@ -79,7 +84,7 @@ class UserProfileAdmin(admin.ModelAdmin):
     list_filter = ("user__is_active", "user__is_staff")
     search_fields = ("user__username", "user__email", "phone", "telegram_chat_id")
     readonly_fields = ("avatar_preview",)
-    inlines = [ViewHistoryInline, FavoriteInline, OrderInline, SentMessagesInline]
+    # Убрали inlines — они не работают здесь
     fieldsets = (
         ("Основная информация", {"fields": ("user", "phone", "telegram_chat_id")}),
         ("Аватар", {"fields": ("avatar", "avatar_preview")}),
@@ -97,7 +102,7 @@ class UserProfileAdmin(admin.ModelAdmin):
 
 
 # ==============================
-# INLINE: Заявки на автомобиль
+# INLINE: Заявки на автомобиль (для CarAdmin)
 # ==============================
 class OrderCarInline(admin.TabularInline):
     model = Order
@@ -109,7 +114,7 @@ class OrderCarInline(admin.TabularInline):
 
 
 # ==============================
-# INLINE: Просмотры автомобиля
+# INLINE: Просмотры автомобиля (для CarAdmin)
 # ==============================
 class ViewHistoryCarInline(admin.TabularInline):
     model = ViewHistory
@@ -121,7 +126,7 @@ class ViewHistoryCarInline(admin.TabularInline):
 
 
 # ==============================
-# INLINE: Избранные автомобилем
+# INLINE: Избранные автомобилем (для CarAdmin)
 # ==============================
 class FavoriteCarInline(admin.TabularInline):
     model = Favorite
@@ -274,3 +279,29 @@ class ChatMessageAdmin(admin.ModelAdmin):
         return obj.message[:50] + "..." if len(obj.message) > 50 else obj.message
 
     message_preview.short_description = "Сообщение (предпросмотр)"
+
+
+# ==============================
+# КАСТОМНАЯ АДМИНКА: User — С ИНЛАЙНАМИ
+# ==============================
+class UserAdmin(BaseUserAdmin):
+    inlines = [ViewHistoryInline, FavoriteInline, OrderInline, SentMessagesInline]
+    list_display = (
+        "username",
+        "email",
+        "first_name",
+        "last_name",
+        "is_staff",
+        "get_telegram_chat_id",
+    )
+    list_filter = ("is_staff", "is_superuser", "is_active", "groups")
+
+    def get_telegram_chat_id(self, obj):
+        return obj.profile.telegram_chat_id if hasattr(obj, "profile") else "—"
+
+    get_telegram_chat_id.short_description = "Telegram Chat ID"
+
+
+# Перерегистрируем UserAdmin
+admin.site.unregister(User)
+admin.site.register(User, UserAdmin)
